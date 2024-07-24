@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import prediction
 import cv2
 import websocket
+import traceback
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -35,6 +36,7 @@ def predict_route():
             print("done prediction")
             img_byte_arr = io.BytesIO()
             # predicted_image = Image.fromarray(predicted_image)
+            print(type(predicted_image))
             predicted_image.savefig(img_byte_arr, format='PNG')
             img_byte_arr.seek(0)  # Move to the beginning of the byte stream
 
@@ -60,6 +62,8 @@ def predict_route():
             print("done prediction")
             img_byte_arr = io.BytesIO()
             # predicted_image = Image.fromarray(predicted_image)
+            print(type(predicted_image))
+
             predicted_image.savefig(img_byte_arr, format='PNG')
             img_byte_arr.seek(0)  # Move to the beginning of the byte stream
 
@@ -72,6 +76,7 @@ def predict_route():
 
         except Exception as e:
             print(e)
+            traceback.print_exc()
             return jsonify({'error': str(e)})
 
 
@@ -84,7 +89,29 @@ def run_flask_app():
     app.run(debug=True, use_reloader=False)
 
 # Main function to run both servers concurrently
-def main():
+
+    # Create a new event loop for asyncio tasks
+    # try:
+    #     loop = asyncio.new_event_loop()
+    #     asyncio.set_event_loop(loop)
+        
+        # Start the WebSocket server in the event loop
+        # websocket_task = asyncio.ensure_future(start_websocket_server(), loop=loop)
+
+    #   prediction.initalize_model()
+        
+    #     # Start Flask app in a new thread
+    #     flask_thread = threading.Thread(target=run_flask_app)
+    #     flask_thread.start()
+        
+    #     # Run the event loop until completion
+    #     loop.run_until_complete(websocket_task)
+    #     flask_thread.join()
+    # except Exception as e:
+    #     print(e)
+    
+
+if __name__ == '__main__':
     # Create a new event loop for asyncio tasks
     try:
         loop = asyncio.new_event_loop()
@@ -104,7 +131,3 @@ def main():
         flask_thread.join()
     except Exception as e:
         print(e)
-    
-
-if __name__ == '__main__':
-    main()
