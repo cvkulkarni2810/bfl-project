@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import tensorflow as tf
+import traceback
 
 ROOT_DIR = os.path.abspath("F:\BFL\Mask_RCNN-master-tf1\Mask_RCNN-master")
 
@@ -15,7 +16,7 @@ from mrcnn.model import log
 from mrcnn.config import Config
 
 
-class_names = ["Cutter marks and fish marks","Etching and Black spots","Fingerprints and stains","Ink marks","Jig Marks","Machining Marks","Overcut","Pocket"]
+class_names = ["Cutter marks and fish marks","Scratches and Black spots","Fingerprints and stains","Ink marks","Jig Marks","Machining Marks","Overcut","Pocket"]
 class BFLConfig(Config):
     """Configuration for training on the nucleus segmentation dataset."""
     # Give the configuration a recognizable name
@@ -90,18 +91,21 @@ def predict(image):
     
         # print(results)
         r=results[0]
-        print(r)
-
+        # print(r)
+        for i in range(len(r['class_ids'])):
+            r['class_ids'][i] = r['class_ids'][i]-1
+            
     # img = np.array(image)
     # img = np.fliplr(img)
         img  =  visualize.display_instances(image_array, r['rois'], r['masks'], r['class_ids'], 
-                            class_names, r['scores'], ax=get_ax())
-        # print(type(img))
+                            class_names, r['scores'], show_mask=False, ax=get_ax())
+        print(type(img))
         print(img)
-
+        print(r['class_ids'])
         return img, r['class_ids']
     except Exception as e:
         print(e)
+        traceback.print_exc()
     
 
 def get_ax(rows=1, cols=1, size=8):
