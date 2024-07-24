@@ -31,6 +31,7 @@ import uvcham
 import pythoncom
 import cv2
 import numpy as np
+import time
 
 class CameraStream:
     def __init__(self):
@@ -40,6 +41,7 @@ class CameraStream:
         self.pData = None
         self.frame = 0
         self.count = 0
+        
 
     async def open_camera(self):
         arr = uvcham.Uvcham.enum()
@@ -53,30 +55,40 @@ class CameraStream:
             if self.hcam:
                 self.frame = 0
                 res = self.hcam.get(uvcham.UVCHAM_RES)
+                self.hcam.put(uvcham.UVCHAM_FLIPVERT, 1)
                 self.imgWidth = self.hcam.get(uvcham.UVCHAM_WIDTH | res)
                 self.imgHeight = self.hcam.get(uvcham.UVCHAM_HEIGHT | res)
                 self.pData = bytes(uvcham.TDIBWIDTHBYTES(self.imgWidth * 24) * self.imgHeight)
                 try:
                     self.hcam.start(None, self.cameraCallback, self)
+                    # self.hcam.put(uvcham.)
+                    # self.hcam.put(uvcham.)
                 except:
                     self.closeCamera()
                     print("Failed to start camera")
+                
+
 
     async def send_camera_feed(self, websocket, path):
         await self.open_camera()
         # task = asyncio.create_task(self.handle_client_messages(websocket)) 
-        while True:
-            if self.pData is not None:
-                frame_array = bytearray(self.pData)
+        try:
+            while True:
+                if self.pData is not None:
+                    frame_array = bytearray(self.pData)
 
-                image_array = np.frombuffer(frame_array, dtype=np.uint8)
+                    image_array = np.frombuffer(frame_array, dtype=np.uint8)
 
-                resized_image = cv2.resize(image_array.reshape((self.imgHeight, self.imgWidth, 3)), (1920, 1080))
+                    resized_image = cv2.resize(image_array.reshape((self.imgHeight, self.imgWidth, 3)), (1920, 1080))
 
-                _, buffer = cv2.imencode('.jpg', resized_image)
-                img_bytes = buffer.tobytes()
-  
-                await websocket.send(img_bytes)  
+                    _, buffer = cv2.imencode('.jpg', resized_image)
+                    img_bytes = buffer.tobytes()
+
+                    await websocket.send(img_bytes)
+        except websockets.exceptions.ConnectionClosed:
+            print("Client closed connection.")
+        finally:
+            self.closeCamera()
 
     def cameraCallback(self, nEvent, ctx):
         if nEvent == uvcham.UVCHAM_EVENT_IMAGE and self.hcam is not None:
